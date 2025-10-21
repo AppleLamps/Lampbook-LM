@@ -1,0 +1,5 @@
+{
+  "name": "LampbookLM",
+  "description": "An AI-powered research assistant modeled after Google's NotebookLM. Upload your documents, PDFs, and text files to analyze, summarize, and synthesize insights through a conversational interface. LampbookLM helps you explore and understand your materials more efficiently by providing AI-grounded answers with citations to your original sources.",
+  "requestFramePermissions": []
+}
