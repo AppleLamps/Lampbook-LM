@@ -11,9 +11,11 @@ interface ChatPanelProps {
   messages: ChatMessage[];
   onSendMessage: (message: string) => void;
   isLoading: boolean;
+  isStreaming: boolean;
   sources: Source[];
   onSelectSource: (source: Source | null) => void;
   onSynthesize: (format: SynthesisFormat) => void;
+  onStopGenerating: () => void;
 }
 
 const SynthesisButton: React.FC<{
@@ -31,7 +33,7 @@ const SynthesisButton: React.FC<{
     </button>
 );
 
-export const ChatPanel: React.FC<ChatPanelProps> = ({ messages, onSendMessage, isLoading, sources, onSelectSource, onSynthesize }) => {
+export const ChatPanel: React.FC<ChatPanelProps> = ({ messages, onSendMessage, isLoading, isStreaming, sources, onSelectSource, onSynthesize, onStopGenerating }) => {
   const [input, setInput] = useState('');
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -149,7 +151,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ messages, onSendMessage, i
             )}
           </div>
         ))}
-        {isLoading && messages.length > 0 && (
+        {isLoading && !isStreaming && messages.length > 0 && (
             <div className="flex gap-4 items-start justify-start">
                  <div className="w-8 h-8 rounded-full bg-brand-purple flex items-center justify-center flex-shrink-0 mt-1 shadow-md">
                     <SparklesIcon className="w-5 h-5 text-white" />
@@ -179,9 +181,24 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ messages, onSendMessage, i
             disabled={isLoading || sources.length === 0}
             className="w-full bg-white/70 border border-black/10 text-gray-900 rounded-xl p-4 pr-16 resize-none focus:ring-2 focus:ring-brand-blue focus:outline-none disabled:cursor-not-allowed disabled:bg-gray-200/50"
           />
-          <button type="submit" disabled={isLoading || !input.trim() || sources.length === 0} className="absolute right-3 top-1/2 -translate-y-1/2 p-2.5 rounded-lg bg-brand-blue hover:bg-brand-blue/80 text-white disabled:bg-gray-300 transition-transform hover:scale-105">
-            <SendIcon className="w-5 h-5" />
-          </button>
+          {isStreaming ? (
+            <button
+              type="button"
+              onClick={onStopGenerating}
+              className="absolute right-3 top-1/2 -translate-y-1/2 px-4 py-2.5 rounded-lg bg-red-500 hover:bg-red-600 text-white transition-colors flex items-center gap-2"
+            >
+              <span className="w-4 h-4 bg-white"></span>
+              <span className="text-sm font-semibold">Stop</span>
+            </button>
+          ) : (
+            <button
+              type="submit"
+              disabled={isLoading || !input.trim() || sources.length === 0}
+              className="absolute right-3 top-1/2 -translate-y-1/2 p-2.5 rounded-lg bg-brand-blue hover:bg-brand-blue/80 text-white disabled:bg-gray-300 transition-transform hover:scale-105"
+            >
+              <SendIcon className="w-5 h-5" />
+            </button>
+          )}
         </form>
       </div>
     </div>

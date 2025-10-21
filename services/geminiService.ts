@@ -54,6 +54,24 @@ ${content}
     }
 };
 
+// Chat session management for conversational memory
+export const createChatSession = (context: string) => {
+    const model = 'gemini-2.5-flash';
+    const systemInstruction = `You are a helpful research assistant. Based ONLY on the provided sources, answer the user's questions. Your answers should synthesize information from multiple sources if needed. After each statement or paragraph, you MUST cite the source document it came from using its corresponding number, like [1]. If the information comes from multiple sources, cite them all, like [1][2]. Do not use any information outside of the provided sources.
+
+SOURCES:
+---
+${context}
+---`;
+
+    return ai.models.startChat({
+        model,
+        systemInstruction,
+        history: []
+    });
+};
+
+// Legacy function - kept for compatibility with non-chat flows
 export const answerQuestion = async (context: string, question: string): Promise<string> => {
     const model = 'gemini-2.5-flash';
     const prompt = `You are a helpful research assistant. Based ONLY on the provided sources, answer the user's question. Your answer should synthesize information from multiple sources if the question requires it. After each statement or paragraph, you MUST cite the source document it came from using its corresponding number, like [1]. If the information comes from multiple sources, cite them all, like [1][2]. Do not use any information outside of the provided sources.
@@ -76,6 +94,61 @@ ${question}`;
     } catch (error) {
         console.error("Error in answerQuestion:", error);
         throw new Error("Failed to get an answer from the AI model.");
+    }
+};
+
+// Chat-based answer function with conversational memory
+export const answerQuestionWithChat = async (chatSession: any, question: string): Promise<string> => {
+    try {
+        const response = await chatSession.sendMessage(question);
+        return response.text;
+    } catch (error) {
+        console.error("Error in answerQuestionWithChat:", error);
+        throw new Error("Failed to get an answer from the AI model.");
+    }
+};
+
+// Chat session with RAG - creates a chat with only relevant context
+export const createChatSessionWithRAG = (relevantContext: string) => {
+    const model = 'gemini-2.5-flash';
+    const systemInstruction = `You are a helpful research assistant. Based ONLY on the provided relevant excerpts from sources, answer the user's questions. Your answers should synthesize information from multiple sources if needed. After each statement or paragraph, you MUST cite the source document it came from using its corresponding number, like [1]. If the information comes from multiple sources, cite them all, like [1][2]. Do not use any information outside of the provided sources.
+
+RELEVANT EXCERPTS:
+---
+${relevantContext}
+---`;
+
+    return ai.models.startChat({
+        model,
+        systemInstruction,
+        history: []
+    });
+};
+
+// Streaming response with chat
+export const streamChatResponse = async (
+    chatSession: any,
+    question: string,
+    onChunk: (text: string) => void,
+    abortSignal?: AbortSignal
+): Promise<string> => {
+    try {
+        const stream = await chatSession.sendMessageStream(question);
+        let fullText = '';
+
+        for await (const chunk of stream) {
+            if (abortSignal?.aborted) {
+                break;
+            }
+            const chunkText = chunk.text;
+            fullText += chunkText;
+            onChunk(fullText);
+        }
+
+        return fullText;
+    } catch (error) {
+        console.error("Error in streamChatResponse:", error);
+        throw new Error("Failed to stream response from the AI model.");
     }
 };
 

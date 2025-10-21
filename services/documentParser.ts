@@ -45,26 +45,35 @@ const parsePdf = async (file: File): Promise<string> => {
 
 export const parseUrl = async (url: string): Promise<{content: string, name: string}> => {
     try {
-        // NOTE: This client-side fetch is subject to CORS restrictions.
-        // A server-side proxy would be required for robust URL fetching.
-        const response = await fetch(url);
+        // Use backend server to fetch URL (avoids CORS restrictions)
+        const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+
+        const response = await fetch(`${API_URL}/api/fetch-url`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ url })
+        });
+
         if (!response.ok) {
-            throw new Error(`Failed to fetch URL: ${response.statusText}`);
+            const error = await response.json();
+            throw new Error(error.error || `Failed to fetch URL: ${response.statusText}`);
         }
-        const html = await response.text();
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(html, 'text/html');
-        
-        const name = doc.title || url;
-        // A simple text extraction. For better results, a library like Readability.js would be ideal.
-        const content = doc.body.textContent || '';
-        
-        // Remove excessive whitespace
-        return { content: content.replace(/\s\s+/g, ' ').trim(), name };
+
+        const data = await response.json();
+
+        return {
+            content: data.content,
+            name: data.name
+        };
     } catch (error) {
         console.error("Error parsing URL:", error);
-        if (error instanceof Error && error.message.includes('Failed to fetch')) {
-            throw new Error("Could not fetch the URL. This might be due to CORS policy. Try a different URL or upload a file instead.");
+        if (error instanceof Error) {
+            if (error.message.includes('fetch')) {
+                throw new Error("Could not connect to the server. Make sure the backend is running.");
+            }
+            throw error;
         }
         throw new Error("Could not parse content from the URL.");
     }

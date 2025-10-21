@@ -1,4 +1,5 @@
 import React, { useRef, useState } from 'react';
+import toast from 'react-hot-toast';
 import type { Source } from '../types';
 import { SourceViewer } from './SourceViewer';
 import { UploadIcon } from './icons/UploadIcon';
@@ -83,7 +84,7 @@ export const SourcePanel: React.FC<SourcePanelProps> = ({ sources, selectedSourc
     if (event.target.files && event.target.files.length > 0) {
       const files = Array.from(event.target.files);
       if (sources.length + files.length > MAX_SOURCES) {
-        alert(`Cannot add ${files.length} file(s). You can have a maximum of ${MAX_SOURCES} sources in total.`);
+        toast.error(`Cannot add ${files.length} file(s). You can have a maximum of ${MAX_SOURCES} sources in total.`);
         return;
       }
       onAddSources(files);
@@ -104,9 +105,8 @@ export const SourcePanel: React.FC<SourcePanelProps> = ({ sources, selectedSourc
   }
 
   const handleDelete = (source: Source) => {
-    if (window.confirm(`Are you sure you want to delete "${source.name}"? This action cannot be undone.`)) {
-        onDeleteSource(source.id);
-    }
+    onDeleteSource(source.id);
+    toast.success(`Deleted: ${source.name}`);
   }
 
   return (
